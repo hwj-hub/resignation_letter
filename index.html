@@ -44,11 +44,43 @@ body{background:var(--bg);color:var(--fg);line-height:1.55;word-break:keep-all;o
 .hide{display:none !important}
 .nw{white-space:nowrap}
 
-/* ══ 광고 슬롯 ══ */
-.ad-slot{display:flex;align-items:center;justify-content:center;margin:10px auto;overflow:hidden}
+/* ══ 광고 슬롯 ══ 자리만 비워 두고 화면 폭에 맞는 크기를 AD 가 채운다.
+   크기를 미리 잡아 두어 광고가 늦게 떠도 화면이 밀리지 않는다(애드핏: 광고 공간은 고정되어야 함) */
+.ad-slot{display:flex;align-items:center;justify-content:center;margin:10px auto;max-width:100%}
 .ad-top{width:320px;height:50px;max-width:100%}
 .ad-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);
   border-radius:8px;background:var(--card2);color:var(--muted);font-size:11px;letter-spacing:.08em;font-weight:600}
+.ad-lab{display:block;text-align:center;font-size:9.5px;font-weight:700;letter-spacing:.14em;color:var(--muted);opacity:.7;margin:12px 0 -4px}
+body.no-ad .ad-slot,.ad-none{display:none !important}
+/* PC 옆 칸 — 미리보기 카드 바로 위 320×50 (좁은 화면에서는 숨긴다) */
+@media (max-width:979px){#ad-side{display:none}}
+@media (min-width:980px){#ad-side{margin:14px auto 0}}
+/* 본문 광고는 버튼·입력칸에서 넉넉히 떼어 놓는다 — 실수로 눌리는 자리는 금지 */
+#ad-mid{margin:18px auto}
+
+/* ── 하단 오버형 ── 콘텐츠를 가리지 않도록 본문 아래 여백을 같이 늘린다(애드핏: 콘텐츠를 덮는 배치 금지).
+   입력 중(아래 바가 떠 있을 때)에는 띄우지 않는다 — 핵심 행동 중 광고 노출 금지 조항 */
+#anchor{position:fixed;left:0;right:0;bottom:0;z-index:45;display:flex;align-items:center;justify-content:center;
+  background:var(--card);border-top:1px solid var(--line);box-shadow:0 -8px 22px -14px rgba(0,0,0,.55);
+  padding:8px 4px calc(8px + env(safe-area-inset-bottom));transform:translateY(120%);transition:transform .22s}
+#anchor.on{transform:none}
+#anchor .ad-slot{margin:0}
+#anchor .amk{position:absolute;left:10px;top:-11px;font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--muted);
+  background:var(--card);border:1px solid var(--line);border-radius:5px;padding:0 5px;line-height:15px}
+/* 닫기는 광고 영역 밖에 둔다 — 광고 안에 닫기 버튼을 넣는 것은 금지(오클릭 방지) */
+#anchor .axl{position:absolute;right:6px;top:-38px;width:36px;height:36px;border-radius:50%;cursor:pointer;
+  border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:13px;line-height:1;box-shadow:var(--shadow)}
+#anchor .axl::before{content:'';position:absolute;inset:-6px}
+body.anch .wrap{padding-bottom:calc(124px + env(safe-area-inset-bottom))}
+body.anch #toast{bottom:calc(118px + env(safe-area-inset-bottom))}
+@media (min-width:980px){#anchor{display:none}}
+
+/* ── 저장 완료 카드 ── 화면을 덮지 않고 본문 흐름 안에 펼친다(애드핏: 콘텐츠를 덮거나 가리는 영역에 광고 배치 금지) */
+#doneCard{border-color:color-mix(in srgb,var(--ok) 40%,var(--line))}
+#doneCard .ad-lab{margin-top:16px}
+.dmsg{margin:0 0 10px;font-size:14px;font-weight:700;line-height:1.6}
+.dsteps{margin:0;padding:0 0 0 20px;font-size:13px;font-weight:600;line-height:1.75;color:var(--muted)}
+.dsteps b{color:var(--fg);font-weight:800}
 
 header{text-align:center;padding:14px 0 2px}
 .logo{display:inline-flex;align-items:center;gap:9px;font-size:22px;font-weight:800;letter-spacing:-.02em}
@@ -67,7 +99,8 @@ header{text-align:center;padding:14px 0 2px}
 @media (min-width:980px){
   .layout{grid-template-columns:minmax(0,1fr) 430px;align-items:start}
   .side{position:sticky;top:8px}
-  .side .pv-pages{max-height:calc(100vh - 250px);overflow:auto}
+  /* 옆 칸 광고(50px) 만큼 미리보기를 줄여 「PDF로 저장」 단추가 첫 화면 안에 남게 한다 */
+  .side .pv-pages{max-height:calc(100vh - 480px);min-height:320px;overflow:auto}
 }
 
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px;margin-top:14px}
@@ -303,25 +336,16 @@ footer a{color:inherit}
 <body>
 <div class="wrap">
 
-<!-- ╔══════════════════════════════════════════════════════════╗
-     ║  광고 슬롯 · 상단 320 × 50 · 카카오 애드핏                     ║
-     ║  단위 ID: DAN-XXXXXXXXXXXXXXXX  ← 이 도구 전용 단위로 교체      ║
-     ║  ※ 티스토리 포스팅 본문에 같은 단위를 또 넣으면                  ║
-     ║     한 화면에 두 번 노출되어 애드핏 정책 위반입니다.             ║
-     ║     본문에 광고를 넣으려면 다른 단위를 발급해 쓰세요.            ║
-     ║  · 광고를 빼려면 아래 ins·script 두 줄만 지우면 됩니다          ║
-     ║  · 광고 스크립트는 입력한 이름·회사·날짜에 접근하지 않습니다     ║
-     ║  · 주소는 반드시 https:// 로 (file:// 로 열 때 //t1... 은 깨짐) ║
-     ║  · 애드센스로 바꿀 때도 이 div 안의 두 줄만 교체하면 됩니다      ║
-     ╚══════════════════════════════════════════════════════════╝ -->
-<div class="ad-slot ad-top" id="ad-top">
-  <ins class="kakao_ad_area" style="display:none;"
-    data-ad-unit="DAN-9sKeftSXQDDN26wI"
-    data-ad-width="320"
-    data-ad-height="50"></ins>
-  <script type="text/javascript" src="https://t1.kakaocdn.net/kas/static/ba.min.js" async></script>
-</div>
-<!-- ══ 광고 슬롯 끝 ══ -->
+<!-- ╔══════════════════════════════════════════════════════════════════════╗
+     ║  광고 자리 ① 맨 위 · 모바일 320×50 / PC 728×90                        ║
+     ║  단위 ID 는 스크립트 아래쪽 AD.units 한 곳에서 바꿉니다.               ║
+     ║  ins·script 를 여기 직접 쓰지 않고 AD 가 넣는 이유                     ║
+     ║   · 화면 폭에 맞는 크기만 부르려고(안 보이는 광고를 부르지 않음)        ║
+     ║   · 한 페이지 4개 제한을 코드 한 곳에서 지키려고                       ║
+     ║  한 화면에 4곳 — 모바일 ① 맨 위 ② 본문 ③ 저장 완료 카드 ④ 하단 오버형  ║
+     ║              PC   ① 맨 위 728×90 ② 미리보기 위 320×50 ③ 본문 ④ 완료   ║
+     ╚══════════════════════════════════════════════════════════════════════╝ -->
+<div class="ad-slot ad-top" id="ad-top"></div>
 
 <header>
   <div class="logo"><span class="ico">✉️</span><span>사직서 작성기</span></div>
@@ -516,6 +540,8 @@ footer a{color:inherit}
 </main>
 
 <aside class="side" id="side">
+  <!-- 광고 자리 · PC 미리보기 위 320×50 (모바일에서는 숨깁니다) -->
+  <div class="ad-slot" id="ad-side"></div>
   <section class="card pv" id="pvCard">
     <h2><span>미리보기</span><span class="pvinfo" id="pvInfo">A4</span></h2>
     <div class="pv-pages" id="pvPages" title="눌러서 크게 보기"></div>
@@ -528,12 +554,29 @@ footer a{color:inherit}
     </div>
     <p class="fine">워드 파일(.docx)은 한글(한컴오피스)에서도 열어 고칠 수 있습니다. 회사 전용 양식이 있으면 그 양식을 우선 쓰세요.</p>
   </section>
+
+  <!-- 저장 완료 카드 · 광고 자리 ③ — 저장을 누른 다음(핵심 행동이 끝난 뒤)에 펼쳐집니다.
+       창으로 화면을 덮지 않고 본문 흐름 안에 두며, 닫기는 광고 영역 밖 머리글에 둡니다. -->
+  <section class="card hide" id="doneCard">
+    <h2><span>저장했습니다</span><button class="mini" id="doneHide" type="button">닫기</button></h2>
+    <p class="dmsg" id="doneMsg"></p>
+    <ol class="dsteps">
+      <li>낸 날짜가 남도록 <b>사본(사진)</b>을 보관하고, 받았다는 답을 메일·메신저로 받아 두세요.</li>
+      <li>마지막 근무일을 회사와 <b>합의</b>했는지 다시 확인하세요.</li>
+      <li>퇴직일부터 <b>14일 안에</b> 마지막 월급·퇴직금·연차수당이 들어왔는지 보세요.</li>
+    </ol>
+    <div id="doneAd"><span class="ad-lab">광고</span><div class="ad-slot" id="ad-done"></div></div>
+  </section>
   <section class="card">
     <h2><span>점검 결과</span><span class="pvinfo" id="chkInfo"></span></h2>
     <ul class="checks" id="checks"></ul>
   </section>
 </aside>
 </div>
+
+<!-- 광고 자리 ② 본문 — 입력도 저장도 끝난 자리에 둔다(입력 중에는 광고를 띄우지 않는다는 애드핏 조항)
+     모바일·PC 모두 320×100 — 둘이 같이 뜨지 않으니 단위 ID 하나면 된다 -->
+<div class="ad-slot" id="ad-mid"></div>
 
 <!-- 안내 -->
 <section class="card">
@@ -638,6 +681,10 @@ footer a{color:inherit}
     <div class="vpages" id="viewPages"></div>
   </div>
 </div>
+
+<!-- 광고 자리 ④ 하단 오버형 · 320×50 — 읽는 구간에서만 올라오고, 입력 중에는 내려가 있습니다. -->
+<div id="anchor"><span class="amk">광고</span><div class="ad-slot" id="ad-anchor"></div>
+  <button class="axl" id="anchorX" type="button" aria-label="광고 닫기">✕</button></div>
 
 <div id="mbar"><div class="in"><div class="k">미리보기 · 저장<b id="mbarTxt">A4 사직서</b></div><button class="go" id="mbarGo" type="button">문서 보기 ↓</button></div></div>
 <div id="printArea"></div>
@@ -2270,6 +2317,125 @@ function renderTimeline(c) {
   $('lastChips').innerHTML = chips.map(o => `<button type="button"${o.hot ? ' class="hot"' : ''} data-date="${o.date}"><b>${short(o.date)}</b> ${esc(o.label)}</button>`).join('');
 }
 
+/* ════════════════════════════════════════════════════════════
+   광고 (카카오 애드핏) — 자리는 여기 한 곳에서만 만든다
+   · 한 화면에 4개까지만 (애드핏 운영정책 5.3: 한 페이지 4개 초과 게재 금지)
+       모바일 ① 맨 위 320×50 ② 본문 320×100 ③ 저장 완료 카드 300×250 ④ 하단 오버형 320×50
+       PC     ① 맨 위 728×90 ② 미리보기 위 320×50 ③ 본문 320×100 ④ 저장 완료 카드 300×250
+   · 화면 폭에 맞는 단위만 넣는다 — 숨겨 둔 광고를 부르지 않으려고
+   · ins 는 자리마다 미리 만들어 두고 ba.min.js 는 맨 끝에 한 번만 부른다 —
+     애드핏 로더는 자기가 뜰 때 있는 ins 만 읽어서, 뒤늦게 넣은 ins 는 빈 채로 남는다
+   · 입력 중에는 오버형을 내려 둔다(핵심 행동 중 광고 노출 금지)
+   · 저장 완료 광고는 창으로 덮지 않고 본문에 카드로 펼친다(「콘텐츠를 덮거나 가리는 영역에 광고 배치 금지」)
+   · iframe 안에서는 넣지 않는다 — 아이프레임에서의 광고 호출은 금지.
+     티스토리 글처럼 이 도구를 끼워 넣은 쪽은 그 글의 광고 단위를 쓴다
+   ※ 단위 ID 는 애드핏에서 크기별로 따로 발급받아 아래 units 에만 적으면 된다.
+     같은 ID 를 두 자리에 쓰면 한 화면에 두 번 노출되어 정책 위반이다. */
+const AD = {
+  units: {
+    top_m:   { id: 'DAN-9sKeftSXQDDN26wI', w: 320, h: 50 },   /* 모바일 맨 위 */
+    top_pc:  { id: 'DAN-QwoTxXoK3RJthoQ7', w: 728, h: 90 },   /* PC 맨 위 */
+    side_pc: { id: 'DAN-8JOcSkF1NFQMzth4', w: 320, h: 50 },   /* PC 미리보기 카드 위 */
+    mid:     { id: 'DAN-mCPPOE9NpAdcz3Q3', w: 320, h: 100 },  /* 본문 중간 · 모바일과 PC 가 같이 뜨지 않아 하나로 쓴다 */
+    done:    { id: 'DAN-YfmIJuT4I7hjiMbk', w: 300, h: 250 },  /* 저장 완료 카드 */
+    anchor:  { id: 'DAN-CTrJPed1GktRUMmB', w: 320, h: 50 }    /* 모바일 하단 오버형 */
+  },
+  iframeOk: false,  /* iframe 안에서도 띄우려면 true (애드핏에서는 권하지 않음) */
+  popup: true,      /* 저장 완료 카드 */
+  overlay: true,    /* 하단 오버형 */
+  init() {
+    this.off = window.top !== window.self && !this.iframeOk;
+    this.pc = window.matchMedia('(min-width:980px)').matches;
+    if (this.off) { document.body.classList.add('no-ad'); return; }  /* 빈 자리가 남지 않게 접는다 */
+    this.put($('ad-top'), this.pc ? 'top_pc' : 'top_m');
+    if (this.pc) this.put($('ad-side'), 'side_pc');
+    this.put($('ad-mid'), 'mid');
+    /* 숨어 있는 자리(하단 오버형·저장 완료 카드)는 여기서 만들지 않는다.
+       화면에 나온 다음에 부른다 — 안 보이는 동안 부르면 보는 사람 없이 노출만 잡히고,
+       애드핏도 「노출수를 인위적으로 늘리는 수단」을 금지한다 */
+    this.load();
+  },
+  /* 자리에 ins 를 만들어 둔다. 단위 ID 를 아직 안 넣었으면 점선 자리만 그리고 요청은 보내지 않는다.
+     높이는 min-height 로 — 내려온 광고가 적어 놓은 높이보다 길어도 잘리지 않게 */
+  put(box, key, preload) {
+    const u = this.units[key];
+    if (!box || !u || box.dataset.ad) return;
+    box.dataset.ad = key;
+    box.style.width = u.w + 'px';
+    if (/XXXX/.test(u.id)) { box.style.height = u.h + 'px'; box.innerHTML = `<div class="ad-ph">광고 ${u.w} × ${u.h}</div>`; return; }
+    box.style.minHeight = u.h + 'px';
+    /* 광고가 안 내려오면 빈 칸이 남는다 — 공식 콜백으로 접는다. 단위가 여럿이면 이름이 서로 달라야 한다 */
+    const fail = 'adNone_' + key;
+    window[fail] = () => {
+      box.classList.add('ad-none');
+      if (key === 'anchor') { this.closed = true; this.sync(true); }
+      if (key === 'done') $('doneAd').classList.add('ad-none');
+    };
+    const ins = document.createElement('ins');
+    ins.className = 'kakao_ad_area'; ins.style.display = 'none';
+    ins.setAttribute('data-ad-unit', u.id);
+    ins.setAttribute('data-ad-width', String(u.w));
+    ins.setAttribute('data-ad-height', String(u.h));
+    ins.setAttribute('data-ad-onfail', fail);
+    /* preload 를 켜면 애드핏이 「보이는 자리인가」 검사를 건너뛰고 0.7초마다 도는
+       preload 차례에 그려 넣는다 — 아직 숨어 있는 자리는 이 길로만 채울 수 있다 */
+    if (preload) ins.setAttribute('data-ad-preload', 'Y');
+    box.appendChild(ins);
+    this.need = true;
+  },
+  /* 숨어 있던 자리를 화면에 내놓은 뒤에 부른다.
+     애드핏 로더는 뜰 때 한 번 훑고 마는 대신 0.7초마다 preload 차례를 도는데,
+     그 차례는 data-ad-preload 가 붙은 것만 본다. 기다리지 않게 render 도 한 번 찔러 준다 */
+  show(box, key) {
+    if (this.off || box.dataset.ad) return;
+    this.put(box, key, true);
+    this.load();
+    try {
+      const ins = box.querySelector('ins');
+      if (ins && window.adfit && typeof window.adfit.render === 'function') window.adfit.render(ins);
+    } catch (e) { /* 안 되면 0.7초 뒤 preload 차례가 채운다 */ }
+  },
+  /* 자리를 다 만든 뒤 딱 한 번 */
+  load() {
+    if (!this.need || this.loaded) return;
+    this.loaded = true;
+    const s = document.createElement('script');
+    s.type = 'text/javascript'; s.async = true;
+    s.src = 'https://t1.kakaocdn.net/kas/static/ba.min.js';
+    document.body.appendChild(s);
+  },
+  /* 하단 오버형 — 읽는 구간에서만 올라온다. 아래 바(입력 중)·창이 열렸을 때는 내린다 */
+  sync(barOn) {
+    if (this.off || this.pc || !this.overlay) return;
+    const modal = !$('signModal').classList.contains('hide') || !$('viewModal').classList.contains('hide');
+    const show = !this.closed && !barOn && !modal && window.scrollY > 320;
+    $('anchor').classList.toggle('on', show);
+    document.body.classList.toggle('anch', show);
+    if (show) this.show($('ad-anchor'), 'anchor');
+  },
+  /* 저장이 끝나면 본문에 결과 카드를 펼치고 그쪽을 보여 준다 — 창으로 덮지 않는다 */
+  done(msg) {
+    if (this.off || !this.popup) return;
+    $('doneMsg').textContent = msg;
+    $('doneCard').classList.remove('hide');
+    this.show($('ad-done'), 'done');
+    clearTimeout(this.goT);
+    this.goT = setTimeout(() => {
+      $('doneCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      updateMbar();
+    }, 250);
+  },
+  hideDone() { $('doneCard').classList.add('hide'); updateMbar(); }
+};
+
+/* 휴대폰: 입력칸을 내려가는 동안 미리보기가 화면 밖에 있으면 아래 바를 띄운다 */
+function updateMbar() {
+  const r = $('pvCard').getBoundingClientRect();
+  const on = $('form').getBoundingClientRect().top < 0 && r.top > window.innerHeight;
+  $('mbar').classList.toggle('on', on);
+  AD.sync(on);
+}
+
 /* ── 새로 그리기 ── */
 let CUR = null, refreshT = 0, version = 0;
 function refreshSoon() { clearTimeout(refreshT); refreshT = setTimeout(refresh, 90); }
@@ -2401,17 +2567,17 @@ function init() {
   $('padClear').addEventListener('click', padClear);
   $('padLoad').addEventListener('click', () => $('padFile').click());
   $('padFile').addEventListener('change', e => { padLoadFile(e.target.files[0]); e.target.value = ''; });
-  $('padOk').addEventListener('click', padOk);
-  $('signClose').addEventListener('click', closeSign);
-  $('signModal').addEventListener('click', e => { if (e.target === $('signModal')) closeSign(); });
+  $('padOk').addEventListener('click', () => { padOk(); updateMbar(); });
+  $('signClose').addEventListener('click', () => { closeSign(); updateMbar(); });
+  $('signModal').addEventListener('click', e => { if (e.target === $('signModal')) { closeSign(); updateMbar(); } });
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
-    if (!$('signModal').classList.contains('hide')) closeSign();
-    if (!$('viewModal').classList.contains('hide')) $('viewModal').classList.add('hide');
+    if (!$('signModal').classList.contains('hide')) { closeSign(); updateMbar(); }
+    if (!$('viewModal').classList.contains('hide')) { $('viewModal').classList.add('hide'); updateMbar(); }
   });
 
-  $('pvPages').addEventListener('click', openViewer);
-  $('viewClose').addEventListener('click', () => $('viewModal').classList.add('hide'));
+  $('pvPages').addEventListener('click', () => { openViewer(); AD.sync(true); });
+  $('viewClose').addEventListener('click', () => { $('viewModal').classList.add('hide'); updateMbar(); });
   $('viewZoom').addEventListener('click', () => { viewZoom = viewZoom > 1 ? 1 : 2; drawViewer(); });
 
   $('btnSample').addEventListener('click', sample);
@@ -2420,19 +2586,25 @@ function init() {
     const blob = await buildPdfBlob($('btnPdf'));
     download(blob, fileBase() + '.pdf');
     toast(`PDF를 저장했습니다 (${CUR.lay.pages.length}쪽 · ${Math.max(1, Math.round(blob.size / 1024))}KB)`);
+    AD.done('사직서 PDF를 저장했습니다. 내기 전에 이것만 확인하세요.');
   }));
   $('btnImg').addEventListener('click', e => busy(e.currentTarget, '그리는 중…', async () => {
     const cur = ensureCur();
     const blob = await makeImage(cur.lay);
     download(blob, fileBase() + '.png');
     toast(cur.lay.pages.length > 1 ? `${cur.lay.pages.length}쪽을 이어 붙인 한 장으로 저장했습니다` : '이미지를 저장했습니다');
+    AD.done('이미지를 저장했습니다. 내기 전에 이것만 확인하세요.');
   }));
   $('btnDocx').addEventListener('click', e => busy(e.currentTarget, '만드는 중…', async () => {
     const cur = ensureCur();
     download(makeDOCX(cur.doc, S), fileBase() + '.docx');
     toast('워드 파일을 저장했습니다. 한글에서도 열 수 있습니다.');
+    AD.done('워드 파일을 저장했습니다. 고칠 곳을 고친 뒤 이렇게 내세요.');
   }));
-  $('btnPrint').addEventListener('click', e => busy(e.currentTarget, '준비 중…', doPrint));
+  $('btnPrint').addEventListener('click', e => busy(e.currentTarget, '준비 중…', async () => {
+    await doPrint();
+    AD.done('인쇄를 보냈습니다. 종이에 서명한 뒤 이렇게 내세요.');
+  }));
   try {
     const probe = new File([new Uint8Array(1)], 'a.pdf', { type: 'application/pdf' });
     if (navigator.canShare && navigator.share && navigator.canShare({ files: [probe] })) $('btnShare').classList.remove('hide');
@@ -2447,20 +2619,18 @@ function init() {
     busy(btn, 'PDF 만드는 중…', async () => { const blob = await buildPdfBlob(btn); await go(blob); });
   });
 
-  // 휴대폰: 미리보기가 화면 밖이면 아래 바를 띄운다
-  const mbar = $('mbar');
-  const onScroll = () => {
-    const r = $('pvCard').getBoundingClientRect();
-    const formTop = $('form').getBoundingClientRect().top;
-    mbar.classList.toggle('on', formTop < 0 && r.top > window.innerHeight);
-  };
-  window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', () => { onScroll(); if (CUR) renderPreview(CUR.lay); }, { passive: true });
+  // 휴대폰: 미리보기가 화면 밖이면 아래 바를 띄운다(그동안 하단 오버형 광고는 내려 둔다)
+  window.addEventListener('scroll', updateMbar, { passive: true });
+  window.addEventListener('resize', () => { updateMbar(); if (CUR) renderPreview(CUR.lay); }, { passive: true });
   $('mbarGo').addEventListener('click', () => $('pvCard').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  // 저장 완료 창 — 닫기는 모두 광고 영역 밖(헤더 ✕ · 아래 단추 · 배경 · ESC)
+  $('doneHide').addEventListener('click', () => AD.hideDone());
+  $('anchorX').addEventListener('click', () => { AD.closed = true; AD.sync(true); });
 
   fillForm();
   refresh();
-  onScroll();
+  updateMbar();
+  AD.init();
   if (restored) toast('이 탭에서 쓰던 내용을 불러왔습니다.');
 }
 
