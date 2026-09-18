@@ -2400,6 +2400,7 @@ function renderTimeline(c) {
 const UA = navigator.userAgent || '';
 const IA = {
   naver: /NAVER\(inapp/i.test(UA),
+  naverBlog: /NAVER\(inapp;\s*blog/i.test(UA),    /* 네이버 블로그 앱 — 네이버 글의 링크를 누르면 대개 여기서 열린다 */
   kakao: /KAKAOTALK/i.test(UA),
   line: /\bLine\//i.test(UA),
   ios: /iPhone|iPad|iPod/i.test(UA),
@@ -2419,9 +2420,12 @@ function externalUrl() {
     '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(url) + ';end';
   return '';          /* 아이폰은 사파리를 강제로 열 수 없다 */
 }
+/* 「다른 브라우저로 열기」 메뉴가 있는 자리 — 네이버 앱(아이폰)은 오른쪽 아래, 안드로이드 앱은 대개 오른쪽 위.
+   그 밖의 아이폰 앱(네이버 블로그 앱·카카오톡·라인)은 앱마다 달라 「화면의」로 쓴다 */
+function iaMenu() { return IA.ios ? (IA.naver && !IA.naverBlog ? '오른쪽 아래' : '화면의') : '오른쪽 위'; }
 function copyAddr(guide) {
   const url = location.href;
-  const done = () => toast(guide ? '주소를 복사했습니다. 사파리를 열고 붙여 넣거나, 오른쪽 아래 메뉴에서 「다른 브라우저로 열기」를 누르세요.' : '주소를 복사했습니다.', 5200);
+  const done = () => toast(guide ? '주소를 복사했습니다. 사파리를 열고 붙여 넣거나, ' + iaMenu() + ' 메뉴에서 「다른 브라우저로 열기」를 누르세요.' : '주소를 복사했습니다.', 5200);
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(url).then(done, () => fallbackCopy(url, done)); return; }
   } catch (e) { /* 아래로 */ }
@@ -2455,8 +2459,9 @@ function downloadInApp(blob, name) {
    입력은 그 탭에만 있어서 브라우저를 옮기는 순간 처음부터 다시 써야 한다 */
 function initInApp() {
   if (!IA.on) return;
-  const app = IA.naver ? '네이버 앱' : IA.kakao ? '카카오톡' : IA.line ? '라인' : '앱';
+  const app = IA.naverBlog ? '네이버 블로그 앱' : IA.naver ? '네이버 앱' : IA.kakao ? '카카오톡' : IA.line ? '라인' : '앱';
   const copyOnly = IA.ios && !IA.kakao && !IA.line;   /* 아이폰은 사파리를 강제로 열 수 없다 */
+  const menu = iaMenu();
   /* 카카오·라인은 앱의 자체 통로(kakaotalk:// · openExternalBrowser)로 기본 브라우저가 열린다.
      크롬을 콕 집어 여는 것은 안드로이드 intent:// 뿐이라 문구를 나눈다 */
   const chromeIntent = IA.android && !IA.kakao && !IA.line;
@@ -2467,23 +2472,28 @@ function initInApp() {
 
   $('iaDesc').innerHTML = '<b>' + app + '</b> 안에서 열렸습니다. 이 화면에서는 ' +
     '<b>PDF·워드·이미지 어느 것도 저장되지 않습니다.</b> 사직서를 다 만들어도 받을 수 없으니 ' +
-    '<b>쓰기 전에</b> 브라우저를 옮겨 주세요.';
+    '<b>쓰기 전에</b> 브라우저를 옮겨 주세요. 인쇄 창도 대개 뜨지 않습니다.';
   const steps = copyOnly
     ? ['아래 <b>주소 복사</b>를 누르세요.',
-       '오른쪽 아래 <b>메뉴</b>에서 「다른 브라우저로 열기」를 누르거나, <b>사파리</b> 주소창에 붙여 넣으세요.']
+       menu + ' <b>메뉴</b>에서 「다른 브라우저로 열기」를 누르거나, <b>사파리</b> 주소창에 붙여 넣으세요.']
     : chromeIntent
       ? ['아래 <b>크롬에서 열기</b>를 누르세요.',
          '크롬이 없으면 오른쪽 위 <b>메뉴</b>에서 「다른 브라우저로 열기」를 누르세요.']
       : ['아래 <b>다른 브라우저로 열기</b>를 누르세요.',
-         '열리지 않으면 오른쪽 위 <b>메뉴</b>에서 「다른 브라우저로 열기」를 누르세요.'];
+         '열리지 않으면 ' + menu + ' <b>메뉴</b>에서 「다른 브라우저로 열기」를 누르세요.'];
   $('iaSteps').innerHTML = steps.map(t => '<li>' + t + '</li>').join('');
   const label = copyOnly ? '주소 복사' : chromeIntent ? '크롬에서 열기' : '다른 브라우저로 열기';
   $('iaGo').textContent = label;
   $('iaGo2').textContent = label;
   $('doneGo').textContent = label;
   $('iaSub').textContent = copyOnly
-    ? '사파리에 붙여 넣거나, 오른쪽 아래 메뉴에서 「다른 브라우저로 열기」를 누르세요.'
+    ? '사파리에 붙여 넣거나, ' + menu + ' 메뉴에서 「다른 브라우저로 열기」를 누르세요.'
     : '저장하려면 브라우저를 옮겨 주세요.';
+
+  /* 윗머리 띠를 ✕ 로 닫았으면 새로 고쳐도 띠는 다시 띄우지 않는다(막는 창은 열 때마다 뜬다) */
+  let hidden = false;
+  try { hidden = sessionStorage.getItem('resignation_letter.iahide') === '1'; } catch (e) { /* 무시 */ }
+  if (hidden) document.body.classList.remove('inapp');
 
   lockInApp(true);
 }
@@ -2499,7 +2509,7 @@ function iaCopied() {
   $('iaDesc').innerHTML = '주소를 <b>복사했습니다.</b> 이제 <b>사파리</b>를 열고 주소창에 붙여 넣으세요.';
   $('iaSteps').innerHTML = '<li>홈 화면에서 <b>사파리</b>를 엽니다.</li>' +
     '<li>주소창을 길게 눌러 <b>붙여넣기</b> 하세요.</li>' +
-    '<li>또는 이 화면 오른쪽 아래 <b>메뉴</b> → 「다른 브라우저로 열기」.</li>';
+    '<li>또는 이 화면 ' + iaMenu() + ' <b>메뉴</b> → 「다른 브라우저로 열기」.</li>';
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -2788,6 +2798,7 @@ function init() {
     AD.done('워드 파일을 저장했습니다. 고칠 곳을 고친 뒤 이렇게 내세요.');
   }));
   $('btnPrint').addEventListener('click', e => busy(e.currentTarget, '준비 중…', async () => {
+    if (IA.on) toast('앱 안에서는 인쇄 창이 뜨지 않을 수 있습니다. 위쪽 「' + $('iaGo').textContent + '」를 눌러 주세요.', 5200);
     await doPrint();
     AD.done('인쇄를 보냈습니다. 종이에 서명한 뒤 이렇게 내세요.');
   }));
@@ -2823,7 +2834,10 @@ function init() {
     lockInApp(false);
     toast('저장은 안 됩니다. 만든 사직서를 받으려면 위쪽 「' + $('iaGo').textContent + '」를 눌러 주세요.', 5200);
   });
-  $('iaX').addEventListener('click', () => document.body.classList.remove('inapp'));
+  $('iaX').addEventListener('click', () => {
+    document.body.classList.remove('inapp');
+    try { sessionStorage.setItem('resignation_letter.iahide', '1'); } catch (e) { /* 무시 */ }
+  });
   $('anchorX').addEventListener('click', () => { AD.closed = true; AD.sync(true); });
 
   initInApp();
